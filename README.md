@@ -1,4 +1,4 @@
-# CropEye ??
+# CropEye 
 **Smart Tomato Leaf Pest Detection System**
 
 ## Overview
