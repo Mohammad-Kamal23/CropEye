@@ -1,0 +1,27 @@
+# Flutter Build output (The cause of your errors)
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+android/local.properties
+.vscode/
+.idea/
+
+# Backend / Python
+__pycache__/
+*.py[cod]
+venv/
+env/
+.venv/
+
+# Heavy Files
+*.pt
+*.pth
+*.onnx
+*.tflite
+*.h5

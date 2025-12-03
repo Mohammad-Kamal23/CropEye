@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "88628618177",
+    "project_id": "tuta-d197c",
+    "storage_bucket": "tuta-d197c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:88628618177:android:1d334c646303469edbc540",
+        "android_client_info": {
+          "package_name": "com.example.gp12"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "88628618177-rokb8mijoj3m5acl4u0bu2dr8uetnl5p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQUOpiy73SCBZbnmyPsoGPD193SXs904U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "88628618177-rokb8mijoj3m5acl4u0bu2dr8uetnl5p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
