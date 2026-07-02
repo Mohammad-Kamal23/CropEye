@@ -12,3 +12,5 @@ CropEye is a full-stack solution designed to detect and classify tomato leaf pes
 - Python (FastAPI)
 - TensorFlow / PyTorch
 - Google Gemini API
+
+Built using LLM currently offline 
