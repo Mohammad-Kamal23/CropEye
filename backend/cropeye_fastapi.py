@@ -57,15 +57,11 @@ CNN_MODEL_PATH = os.getenv("CNN_MODEL_PATH", os.path.join("models", "shufflenetv
 # ---------------------------------------------------------------------------
 # BLOCK 1: INDEXED DATABASE CONFIGURATION
 # ---------------------------------------------------------------------------
-# We use the exact path you provided for local testing.
-# If running on Cloud Run, ensure the file is uploaded to "INDEXED-DATABASE/leaf_index.pkl"
-if os.name == 'nt':  # Windows
-    INDEX_DB_PATH = r"C:\Users\homeb\Desktop\BACKEND\INDEXED-DATABASE\leaf_index.pkl"
-else:  # Linux / Cloud Run
-    INDEX_DB_PATH = os.path.join("INDEXED-DATABASE", "leaf_index.pkl")
+# Path of the indexed leaf database (optional; the API runs without it). Set INDEX_DB_PATH to override.
+INDEX_DB_PATH = os.getenv("INDEX_DB_PATH", os.path.join("INDEXED-DATABASE", "leaf_index.pkl"))
 
 # Minimum similarity score (0.0 to 1.0) to accept a database match
-INDEX_DB_MIN_SIM = 0.65
+INDEX_DB_MIN_SIM = float(os.getenv("INDEX_DB_MIN_SIM", "0.65"))
 
 # --- CRITICAL CONFIGURATION ---
 # YOLO must be 640. CNN must be 224. Do not change these unless models are re-exported.
@@ -182,11 +178,29 @@ app = FastAPI(title="CropEye FastAPI Backend", version="9.2")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[o.strip() for o in os.getenv("CORS_ALLOW_ORIGINS", "*").split(",")],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# The diagnostic routes (GPU, ONNX providers, files, environment, ...) are for local debugging only.
+# They are hidden unless ENABLE_DEBUG_ROUTES=1, so a deployed server only exposes the app's own API.
+ENABLE_DEBUG_ROUTES = os.getenv("ENABLE_DEBUG_ROUTES", "0") == "1"
+PUBLIC_ROUTES = {"/", "/ping", "/healthz", "/warmup", "/detect", "/detect_base64", "/chat"}
+
+
+@app.middleware("http")
+async def hide_debug_routes(request: Request, call_next):
+    if not ENABLE_DEBUG_ROUTES and request.url.path not in PUBLIC_ROUTES:
+        return JSONResponse({"detail": "Not Found"}, status_code=404)
+    return await call_next(request)
+
+
+def _redact(env: Dict[str, str]) -> Dict[str, str]:
+    """Environment without secrets (API keys, tokens, passwords)."""
+    secret = ("KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL")
+    return {k: ("***" if any(t in k.upper() for t in secret) else v) for k, v in env.items()}
 
 # ---------------------------------------------------------------------------
 # ONNX runtime helpers (Enhanced Debug Version)
@@ -1449,15 +1463,11 @@ async def debug_info() -> Dict[str, Any]:
 @app.post("/chat")
 async def chat(request: Request) -> JSONResponse:
     _update_last_request()
-    try:
-        if gemini_model is None:
-            raise HTTPException(status_code=500, detail="Gemini not configured")
+    if gemini_model is None:
+        raise HTTPException(status_code=503, detail="Gemini not configured (set GEMINI_API_KEY)")
 
-        data = await request.json()
-        user_msg: str = (data.get("message") or "").trim()
-    except AttributeError:
-        data = await request.json()
-        user_msg = (data.get("message") or "").strip()
+    data = await request.json()
+    user_msg: str = (data.get("message") or "").strip()
 
     context: str = (data.get("context") or "").strip()
     lang_override: str = (data.get("lang") or "").lower()
@@ -1635,8 +1645,8 @@ import psutil, subprocess, threading
 
 @app.get("/debug/env_full")
 async def debug_env_full():
-    """Show ALL environment variables"""
-    return dict(os.environ)
+    """Environment variables, with secrets masked (debug routes only)."""
+    return _redact(dict(os.environ))
 
 
 @app.get("/debug/onnx_providers")

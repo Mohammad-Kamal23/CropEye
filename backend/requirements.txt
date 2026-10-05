@@ -1,4 +1,4 @@
-﻿fastapi==0.115.0
+fastapi==0.115.0
 uvicorn==0.30.1
 gunicorn==22.0.0
 numpy==1.26.4
@@ -15,4 +15,5 @@ itsdangerous>=2.1.2
 click>=8.1.3
 blinker>=1.6.2
 typing-extensions>=4.15.0
-# NO nvidia-cudnn here! It is in the Docker base image now.
+# Not listed here: onnxruntime (CPU: pip install onnxruntime; GPU: onnxruntime-gpu, installed by the Dockerfile)
+# and nvidia-cudnn (it comes with the Docker base image).

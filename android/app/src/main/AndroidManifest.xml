@@ -13,7 +13,7 @@
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
 
     <application
-        android:label="gp12"
+        android:label="CropEye"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 

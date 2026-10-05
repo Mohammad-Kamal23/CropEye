@@ -1,4 +1,4 @@
-name: gp12
+name: cropeye
 description: "CropEye — Cloud-based Tomato Leaf Pest Detector"
 publish_to: 'none'
 version: 1.0.0+1

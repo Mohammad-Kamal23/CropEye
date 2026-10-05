@@ -1,16 +1,101 @@
-# CropEye 
-**Smart Tomato Leaf Pest Detection System**
+# CropEye
 
-## Overview
-CropEye is a full-stack solution designed to detect and classify tomato leaf pests.
-- **Mobile App:** Built with Flutter for real-time image streaming.
-- **Backend:** FastAPI service integrating YOLOv8 and ShuffleNetV2.
-- **AI Assistant:** Gemini-powered chatbot for agronomic advice.
+**Tomato-leaf pest detection app, focused on the tomato leafminer (*Tuta absoluta*). It detects leaf damage, grades its severity and gives advice in Arabic or English.**
 
-## Tech Stack
-- Flutter (Dart)
-- Python (FastAPI)
-- TensorFlow / PyTorch
-- Google Gemini API
+> **Status: under development.** The hosted backend is **offline**, so the published app cannot scan right now.
+> Everything runs locally (instructions below); the app opens in an offline mode when the server is not reachable.
 
-Built using LLM currently offline 
+![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi&logoColor=white)
+![ONNX Runtime](https://img.shields.io/badge/ONNX%20Runtime-GPU%2FCPU-005CED)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
+
+## What it does
+
+1. **Detect** – a YOLOv8s model (ONNX) finds tomato leaves and pest damage in the camera frame.
+2. **Grade** – a ShuffleNetV2 classifier grades severity: healthy, mild, moderate or severe. ShuffleNet was chosen
+   because its channel-shuffle design keeps the compute small enough for a phone-first service.
+3. **Advise** – Google Gemini turns the diagnosis into practical advice (treatment, organic alternatives, irrigation),
+   and a bilingual chat assistant (Arabic / English, detected from the message) answers follow-up questions.
+
+Detection results are smoothed over consecutive frames so the live camera view does not flicker, and an optional
+indexed leaf database can confirm a diagnosis by similarity search.
+
+```mermaid
+flowchart LR
+    A[Flutter app<br/>camera / gallery] -- JPEG --> B[FastAPI backend]
+    B --> C[YOLOv8s<br/>leaf + pest detection]
+    C --> D[ShuffleNetV2<br/>severity grading]
+    D --> E[Gemini<br/>agronomy advice]
+    B -. optional .-> F[Indexed leaf database]
+    E -- JSON --> A
+    A --> G[Firebase Auth<br/>accounts]
+```
+
+## Repository layout
+
+```
+lib/                    Flutter app (screens, camera page, chat page, settings)
+  cloud_service.dart    the only place that talks to the backend
+backend/
+  cropeye_fastapi.py    FastAPI service: /detect, /detect_base64, /chat, /healthz, /ping, /warmup
+  models/               put the ONNX model files here (not in the repo - see models/README.md)
+  .env.example          every backend setting, with defaults
+  Dockerfile            CUDA 11.8 image used on Google Cloud Run (GPU)
+assets/                 app images
+android/ ios/ web/ linux/ macos/ windows/   Flutter platform projects
+```
+
+## Run it locally
+
+### 1. Backend
+
+```bash
+cd backend
+python -m venv .venv && source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt onnxruntime                # or onnxruntime-gpu with CUDA
+# put best_yolo_s.onnx and shufflenetv2_full_precision.onnx in backend/models/
+export GEMINI_API_KEY=...                                  # optional: enables the advice and the chat
+export ALLOW_IDLE_EXIT=0                                   # keep the server running while you work
+uvicorn cropeye_fastapi:app --host 0.0.0.0 --port 8000
+```
+
+Check it: `http://127.0.0.1:8000/healthz` shows whether both models loaded.
+All settings are environment variables, listed in [`backend/.env.example`](backend/.env.example).
+Diagnostic routes (`/debug/...`, `/docs`) are hidden unless `ENABLE_DEBUG_ROUTES=1`; keep them off on any public server.
+
+Docker (GPU): `docker build -t cropeye-backend backend && docker run --gpus all -p 8080:8080 --env-file backend/.env cropeye-backend`
+
+### 2. App
+
+```bash
+flutter pub get
+flutter run                                                         # backend on this machine (desktop, web, iOS simulator)
+flutter run --dart-define=CROPEYE_API_URL=http://10.0.2.2:8000      # Android emulator
+flutter run --dart-define=CROPEYE_API_URL=http://192.168.1.5:8000   # phone on the same Wi-Fi (use your PC's IP)
+```
+
+The backend address is a build-time setting (`CROPEYE_API_URL`), so no code changes are needed between devices.
+If the server cannot be reached the app shows **AI service offline** with *Retry* and *Continue offline*.
+
+Sign-in uses Firebase Authentication. To use your own Firebase project, run `flutterfire configure`, which
+regenerates `lib/firebase_options.dart` and `android/app/google-services.json`. (Firebase client keys identify a
+project rather than grant access; restrict the key to your app in Google Cloud Console.)
+
+## Roadmap
+
+- [ ] Bring the hosted backend back online (Cloud Run GPU) behind the new debug-route guard
+- [ ] Migrate from `google-generativeai` (end of life) to the `google-genai` SDK
+- [ ] Offline-first mode: cache scans locally and sync when back online
+- [ ] Geotag scans to map how a disease spreads across a farm
+- [ ] On-device inference for the severity model
+- [ ] Clean up the remaining analyzer warnings (deprecated `withOpacity`, async `BuildContext` use)
+- [ ] Longer term: a field rover that uses the detections for targeted treatment
+
+## Author
+
+**Mohammad Kamal Abdulaziz** - [GitHub](https://github.com/Mohammad-Kamal23) · [LinkedIn](https://www.linkedin.com/in/mohammadabdulaziz23) · moh203.kamal@gmail.com
+
+## License
+
+[MIT](LICENSE)

@@ -102,9 +102,15 @@ class CloudService with ChangeNotifier {
 
   final List<String> _memory = [];
 
+  /// Backend address, chosen at build time (no code change needed):
+  ///   flutter run --dart-define=CROPEYE_API_URL=http://10.0.2.2:8000       (Android emulator)
+  ///   flutter run --dart-define=CROPEYE_API_URL=http://192.168.1.5:8000    (phone on the same Wi-Fi as your PC)
+  /// Without it the app talks to a backend on this machine (desktop, web, iOS simulator).
+  static const String defaultApiUrl =
+      String.fromEnvironment('CROPEYE_API_URL', defaultValue: 'http://127.0.0.1:8000');
+
   CloudService({
-    this.apiBaseUrl =
-        'https://cropeye-backend-fastapi-631866857693.europe-west4.run.app',
+    this.apiBaseUrl = defaultApiUrl,
     this.defaultConf = 0.30,
     this.defaultIou = 0.60,
   });

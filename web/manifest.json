@@ -1,6 +1,6 @@
 {
-    "name": "gp12",
-    "short_name": "gp12",
+    "name": "CropEye",
+    "short_name": "CropEye",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

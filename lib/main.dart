@@ -50,15 +50,8 @@ Future<void> _bootstrap() async {
     debugPrint('⚠️ Camera permission not granted.');
   }
 
-  // 🔹 CloudService init
-  try {
-    await _cloud.initialize();
-    debugPrint(_cloud.isReady
-        ? '✅ Cloud service initialized.'
-        : '⚠️ Cloud backend not ready.');
-  } catch (e, st) {
-    debugPrint('❌ Cloud init failed: $e\n$st');
-  }
+  // The backend is contacted by _BootstrapGate after the first frame, so the app opens even when
+  // the AI service is offline.
 }
 
 Future<void> main() async {
@@ -127,6 +120,8 @@ class _BootstrapGate extends StatefulWidget {
 
 class _BootstrapGateState extends State<_BootstrapGate> {
   bool _ready = false;
+  bool _checking = true;
+  bool _continueOffline = false; // the user chose to use the app without the AI service
   String? _error;
 
   @override
@@ -137,7 +132,7 @@ class _BootstrapGateState extends State<_BootstrapGate> {
 
   Future<void> _initializeService() async {
     setState(() {
-      _ready = false;
+      _checking = true;
       _error = null;
     });
 
@@ -146,55 +141,91 @@ class _BootstrapGateState extends State<_BootstrapGate> {
       if (!cloud.isReady) {
         await cloud.initialize();
       }
-      setState(() => _ready = cloud.isReady);
+      if (!mounted) return;
+      setState(() {
+        _ready = cloud.isReady;
+        _checking = false;
+      });
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _checking = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_ready) return widget.child;
+    if (_ready || _continueOffline) return widget.child;
 
+    if (_checking) {
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: CircularProgressIndicator(strokeWidth: 3),
+              ),
+              SizedBox(height: 14),
+              Text('Connecting to the CropEye AI service...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Not reachable (CropEye is under development and its hosted backend is offline), or failed.
     return Scaffold(
       body: Center(
-        child: _error == null
-            ? Column(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: CircularProgressIndicator(strokeWidth: 3),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.cloud_off, size: 40, color: Colors.orange),
+              const SizedBox(height: 10),
+              const Text(
+                'AI service offline',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'CropEye is under development and its detection server is not '
+                'reachable at ${CloudService.defaultApiUrl}. You can still explore '
+                'the app; scanning and the assistant need the server '
+                '(see the README to run it locally).',
+                textAlign: TextAlign.center,
+              ),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.redAccent),
                   ),
-                  SizedBox(height: 14),
-                  Text('Initializing AI Service...'),
-                ],
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
+                ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 12,
                 children: [
-                  const Icon(Icons.error_outline, size: 36, color: Colors.red),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Service Initialization Failed',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      _error!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.redAccent),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
                   ElevatedButton(
                     onPressed: _initializeService,
                     child: const Text('Retry'),
                   ),
+                  OutlinedButton(
+                    onPressed: () => setState(() => _continueOffline = true),
+                    child: const Text('Continue offline'),
+                  ),
                 ],
               ),
+            ],
+          ),
+        ),
       ),
     );
   }

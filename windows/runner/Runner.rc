@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "gp12" "\0"
+            VALUE "FileDescription", "CropEye" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "gp12" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
             VALUE "OriginalFilename", "gp12.exe" "\0"
-            VALUE "ProductName", "gp12" "\0"
+            VALUE "ProductName", "CropEye" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

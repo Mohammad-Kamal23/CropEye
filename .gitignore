@@ -1,4 +1,4 @@
-# Flutter Build output (The cause of your errors)
+# Flutter / Dart build output
 build/
 .dart_tool/
 .flutter-plugins
@@ -9,8 +9,11 @@ build/
 ios/Flutter/App.framework
 ios/Flutter/Flutter.framework
 android/local.properties
+
+# IDEs
 .vscode/
 .idea/
+*.iml
 
 # Backend / Python
 __pycache__/
@@ -18,10 +21,14 @@ __pycache__/
 venv/
 env/
 .venv/
+backend/.env
+backend/logs/
+backend/INDEXED-DATABASE/
 
-# Heavy Files
+# Model weights (large; see backend/models/README.md)
 *.pt
 *.pth
 *.onnx
 *.tflite
 *.h5
+*.pkl
