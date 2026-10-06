@@ -1,9 +1,10 @@
 # CropEye
 
-**Tomato-leaf pest detection app, focused on the tomato leafminer (*Tuta absoluta*). It detects leaf damage, grades its severity and gives advice in Arabic or English.**
+**Mobile app for tomato leaves, focused on the tomato leafminer (*Tuta absoluta*). It grades leaf damage from the
+camera and gives advice in Arabic or English.**
 
-> **Status: under development.** The hosted backend is **offline**, so the published app cannot scan right now.
-> Everything runs locally (instructions below); the app opens in an offline mode when the server is not reachable.
+> **Status: under development.** The hosted backend is offline, so the published app cannot scan right now.
+> The backend runs locally (instructions below); the app opens in an offline mode when the server is not reachable.
 
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi&logoColor=white)
@@ -12,22 +13,21 @@
 
 ## What it does
 
-1. **Detect** – a YOLOv8s model (ONNX) finds tomato leaves and pest damage in the camera frame.
-2. **Grade** – a ShuffleNetV2 classifier grades severity: healthy, mild, moderate or severe. ShuffleNet was chosen
-   because its channel-shuffle design keeps the compute small enough for a phone-first service.
-3. **Advise** – Google Gemini turns the diagnosis into practical advice (treatment, organic alternatives, irrigation),
-   and a bilingual chat assistant (Arabic / English, detected from the message) answers follow-up questions.
+1. **Detect** – a YOLOv8s model (ONNX) finds leaves in the camera frame.
+2. **Grade** – a ShuffleNetV2 classifier (ONNX) grades the damage: healthy, mild, moderate or severe.
+3. **Advise** – Google Gemini writes a short recommendation for the result, and a chat assistant answers
+   follow-up questions in Arabic or English (detected from the message).
 
-Detection results are smoothed over consecutive frames so the live camera view does not flicker, and an optional
-indexed leaf database can confirm a diagnosis by similarity search.
+In live camera mode, boxes and grades are smoothed across consecutive frames. An optional database of labelled
+examples (`leaf_index.pkl`) can refine the grade by similarity search.
 
 ```mermaid
 flowchart LR
     A[Flutter app<br/>camera / gallery] -- JPEG --> B[FastAPI backend]
-    B --> C[YOLOv8s<br/>leaf + pest detection]
-    C --> D[ShuffleNetV2<br/>severity grading]
-    D --> E[Gemini<br/>agronomy advice]
-    B -. optional .-> F[Indexed leaf database]
+    B --> C[YOLOv8s<br/>leaf detection]
+    C --> D[ShuffleNetV2<br/>damage grading]
+    D --> E[Gemini<br/>recommendation]
+    B -. optional .-> F[Labelled examples<br/>similarity search]
     E -- JSON --> A
     A --> G[Firebase Auth<br/>accounts]
 ```
@@ -84,7 +84,7 @@ project rather than grant access; restrict the key to your app in Google Cloud C
 
 ## Roadmap
 
-- [ ] Bring the hosted backend back online (Cloud Run GPU) behind the new debug-route guard
+- [ ] Bring the hosted backend back online
 - [ ] Migrate from `google-generativeai` (end of life) to the `google-genai` SDK
 - [ ] Offline-first mode: cache scans locally and sync when back online
 - [ ] Geotag scans to map how a disease spreads across a farm
